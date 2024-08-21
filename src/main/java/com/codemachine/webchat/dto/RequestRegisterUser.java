@@ -3,7 +3,7 @@ package com.codemachine.webchat.dto;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
-public record RequestCreateUser(
+public record RequestRegisterUser(
     @NotBlank
     String username,
     @NotBlank

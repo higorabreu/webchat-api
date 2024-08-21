@@ -1,6 +1,7 @@
 package com.codemachine.webchat.domain;
 
-import com.codemachine.webchat.dto.RequestCreateUser;
+import com.codemachine.webchat.dto.RequestLoginUser;
+import com.codemachine.webchat.dto.RequestRegisterUser;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -26,11 +27,15 @@ public class User {
 
     private String password;
 
-    public User(RequestCreateUser requestUser) {
+    public User(RequestRegisterUser requestUser) {
         this.username = requestUser.username();
         this.email = requestUser.email();
         this.name = requestUser.name();
         this.password = requestUser.password();
     }
 
+    public User(RequestLoginUser data) {
+        this.username = data.username();
+        this.password = data.password();
+    }
 }

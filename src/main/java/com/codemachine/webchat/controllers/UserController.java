@@ -10,14 +10,6 @@ public class UserController {
     @Autowired
     private UserService userService;
 
-    //Auth
-
-    //Register
-    //Login
-    //Logout
-
-    //User
-
     //Get User By id
     //Get User By username
     //Get All Users
