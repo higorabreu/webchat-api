@@ -18,11 +18,12 @@ public class AuthController {
     @Autowired
     private UserService userService;
 
-    // POST /register
-    @PostMapping("/register")
+    // POST /auth/register
+    @PostMapping("/auth/register")
     public ResponseEntity<String> registerUser(@RequestBody @Valid RequestRegisterUser data) {
         try {
             userService.registerUser(data);
+            return ResponseEntity.ok("User registered successfully.");
         } catch (EmailAlreadyRegisteredException ex) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body("Email already registered.");
         } catch (UsernameAlreadyRegisteredException ex) {
@@ -30,14 +31,15 @@ public class AuthController {
         } catch (UserRegisterFailureException ex) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to register user.");
         }
-        return ResponseEntity.ok("User registered successfully.");
+
     }
 
-    // POST /login
-    @PostMapping("/login")
-    public ResponseEntity<String> loginUser(@RequestBody @Valid RequestLoginUser data) {
+    // POST /auth/login
+    @PostMapping("/auth/login")
+    public ResponseEntity<?> loginUser(@RequestBody @Valid RequestLoginUser data) {
         try {
-            userService.loginUser(data);
+            String token = userService.loginUser(data);
+            return ResponseEntity.ok().body(token);
         } catch (UserNotFoundException ex) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found.");
         } catch (InvalidPasswordException ex) {
@@ -45,10 +47,6 @@ public class AuthController {
         } catch (UserLoginFailureException ex) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to login.");
         }
-        return ResponseEntity.ok("User logged in successfully.");
     }
-
-    //Logout
-
 
 }
