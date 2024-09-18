@@ -44,8 +44,10 @@ public class AuthController {
     public ResponseEntity<?> loginUser(@RequestBody @Valid RequestLoginUser data) {
         try {
             String token = userService.loginUser(data);
+            String ttl = "86400";
             Map<String, String> response = new HashMap<>();
-            response.put("token", token);
+            response.put("access_token", token);
+            response.put("ttl", ttl);
             return ResponseEntity.ok().body(response);
         } catch (UserNotFoundException ex) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found.");
