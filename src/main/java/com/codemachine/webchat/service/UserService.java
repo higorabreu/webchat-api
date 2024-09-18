@@ -38,7 +38,7 @@ public class UserService {
 
     public String generateToken(User user) {
         return Jwts.builder()
-                .setSubject(user.getUsername())
+                .setSubject(String.valueOf(user.getId()))
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + 86400000))
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
@@ -55,7 +55,6 @@ public class UserService {
 
     public void registerUser(RequestRegisterUser data)
             throws EmailAlreadyRegisteredException, UsernameAlreadyRegisteredException, UserRegisterFailureException {
-
         try {
 
             if (emailAlreadyRegistered(data.email())) {
@@ -81,9 +80,9 @@ public class UserService {
         }
     }
 
+
     public String loginUser(RequestLoginUser data)
             throws UserNotFoundException, InvalidPasswordException, UserLoginFailureException {
-
         try {
             Optional<User> existingUserOptional = userRepository.findByUsername(data.username());
 
