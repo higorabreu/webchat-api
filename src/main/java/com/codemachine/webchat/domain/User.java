@@ -2,22 +2,22 @@ package com.codemachine.webchat.domain;
 
 import com.codemachine.webchat.dto.RequestLoginUser;
 import com.codemachine.webchat.dto.RequestRegisterUser;
-import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.UUID;
 
-@Table(name="users")
-@Entity(name="user")
+@Document(collection = "users")
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @EqualsAndHashCode(of = "id")
 public class User {
+
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
+    private String id;
 
     private String username;
 
@@ -28,6 +28,7 @@ public class User {
     private String password;
 
     public User(RequestRegisterUser requestUser) {
+        this.id = requestUser.id();
         this.username = requestUser.username();
         this.email = requestUser.email();
         this.name = requestUser.name();
