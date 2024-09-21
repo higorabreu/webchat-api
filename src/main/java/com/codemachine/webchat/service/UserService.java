@@ -1,48 +1,36 @@
 package com.codemachine.webchat.service;
 
+import com.codemachine.webchat.dto.ResponseUser;
+import com.codemachine.webchat.util.JwtUtil;
 import com.codemachine.webchat.domain.User;
 import com.codemachine.webchat.domain.UserRepository;
 import com.codemachine.webchat.dto.RequestLoginUser;
 import com.codemachine.webchat.dto.RequestRegisterUser;
 import com.codemachine.webchat.service.exceptions.*;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UserDetails;
 
-import javax.crypto.SecretKey;
-import java.util.Date;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
-public class UserService {
-
-    @Value("${jwt.secret}")
-    private String jwtSecret;
-
-    private SecretKey getSigningKey() {
-        return Keys.hmacShaKeyFor(jwtSecret.getBytes());
-    }
+public class UserService implements UserDetailsService {
 
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
+    private final JwtUtil jwtUtil;
 
     @Autowired
-    public UserService(PasswordEncoder passwordEncoder, UserRepository userRepository) {
+    public UserService(PasswordEncoder passwordEncoder, UserRepository userRepository, JwtUtil jwtUtil) {
         this.passwordEncoder = passwordEncoder;
         this.userRepository = userRepository;
-    }
-
-    public String generateToken(User user) {
-        return Jwts.builder()
-                .setSubject(String.valueOf(user.getId()))
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + 86400000))
-                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
-                .compact();
+        this.jwtUtil = jwtUtil;
     }
 
     public boolean emailAlreadyRegistered(String email) {
@@ -51,6 +39,17 @@ public class UserService {
 
     public boolean usernameAlreadyRegistered(String username) {
         return userRepository.existsByUsername(username);
+    }
+
+    public List<ResponseUser> getAllUsers() {
+        List<User> users = userRepository.findAll();
+        return users.stream()
+                .map(user -> new ResponseUser(
+                        user.getId(),
+                        user.getEmail(),
+                        user.getUsername(),
+                        user.getName()))
+                .collect(Collectors.toList());
     }
 
     public void registerUser(RequestRegisterUser data)
@@ -96,7 +95,7 @@ public class UserService {
                 throw new InvalidPasswordException();
             }
 
-            return generateToken(existingUser);
+            return jwtUtil.generateToken(existingUser);
 
         } catch (UserNotFoundException | InvalidPasswordException ex) {
             throw ex;
@@ -105,6 +104,27 @@ public class UserService {
         }
     }
 
+
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        try {
+            Optional<User> userOptional = userRepository.findByUsername(username);
+
+            if (userOptional.isEmpty()) {
+                throw new UserNotFoundException();
+            }
+
+            User user = userOptional.get();
+
+            return new org.springframework.security.core.userdetails.User(
+                user.getUsername(),
+                user.getPassword(),
+                new ArrayList<>()
+            );
+
+        } catch (Exception ex) {
+            throw new UsernameNotFoundException("Error loading user");
+        }
+    }
 
 }
 
