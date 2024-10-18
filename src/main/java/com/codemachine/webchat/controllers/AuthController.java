@@ -47,7 +47,6 @@ public class AuthController {
             String ttl = "86400";
             Map<String, String> response = new HashMap<>();
             response.put("access_token", token);
-            response.put("ttl", ttl);
             return ResponseEntity.ok().body(response);
         } catch (UserNotFoundException ex) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found.");

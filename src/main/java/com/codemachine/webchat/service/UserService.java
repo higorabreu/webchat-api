@@ -8,6 +8,7 @@ import com.codemachine.webchat.dto.RequestLoginUser;
 import com.codemachine.webchat.dto.RequestRegisterUser;
 import com.codemachine.webchat.service.exceptions.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -50,6 +51,14 @@ public class UserService implements UserDetailsService {
                         user.getUsername(),
                         user.getName()))
                 .collect(Collectors.toList());
+    }
+
+    public boolean checkUserExists(String username) {
+        try {
+            return userRepository.existsByUsername(username);
+        } catch (DataAccessException ex) {
+            throw new RuntimeException();
+        }
     }
 
     public void registerUser(RequestRegisterUser data)
