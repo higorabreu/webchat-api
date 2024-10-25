@@ -38,9 +38,11 @@ public class UserService implements UserDetailsService {
         return userRepository.existsByEmail(email);
     }
 
+
     public boolean usernameAlreadyRegistered(String username) {
         return userRepository.existsByUsername(username);
     }
+
 
     public List<ResponseUser> getAllUsers() {
         List<User> users = userRepository.findAll();
@@ -53,6 +55,7 @@ public class UserService implements UserDetailsService {
                 .collect(Collectors.toList());
     }
 
+
     public boolean checkUserExists(String username) {
         try {
             return userRepository.existsByUsername(username);
@@ -60,6 +63,7 @@ public class UserService implements UserDetailsService {
             throw new RuntimeException();
         }
     }
+
 
     public void registerUser(RequestRegisterUser data)
             throws EmailAlreadyRegisteredException, UsernameAlreadyRegisteredException, UserRegisterFailureException {
@@ -132,6 +136,16 @@ public class UserService implements UserDetailsService {
 
         } catch (Exception ex) {
             throw new UsernameNotFoundException("Error loading user");
+        }
+    }
+
+
+    public boolean checkTokenValidity(String token, String username) {
+        try {
+            var userDetails = loadUserByUsername(username);
+            return jwtUtil.validateToken(token, userDetails);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to verify token");
         }
     }
 

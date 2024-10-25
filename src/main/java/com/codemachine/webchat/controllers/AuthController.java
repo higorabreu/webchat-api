@@ -8,10 +8,7 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -56,5 +53,39 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to login.");
         }
     }
+
+    // POST /auth/check-token
+    @PostMapping("/auth/check-token")
+    public ResponseEntity<Boolean> isTokenValid(
+            @RequestHeader("Authorization") String authorizationHeader,
+            @RequestBody Map<String, String> requestBody) {
+
+        try {
+            String token = authorizationHeader.startsWith("Bearer ") ? authorizationHeader.substring(7) : null;
+
+            String username = requestBody.get("username");
+
+            if (token == null || token.isEmpty()) {
+                System.err.println("Token não fornecido ou vazio");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
+            }
+
+            if (username == null || username.isEmpty()) {
+                System.err.println("Username não fornecido ou vazio");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
+            }
+
+            boolean isValid = userService.checkTokenValidity(token, username);
+
+            return ResponseEntity.ok(isValid);
+
+        } catch (RuntimeException e) {
+            // Log da exceção
+            System.err.println("Erro ao verificar o token: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(false);
+        }
+    }
+
+
 
 }
