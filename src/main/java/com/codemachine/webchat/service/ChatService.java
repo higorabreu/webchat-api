@@ -13,12 +13,19 @@ public class ChatService {
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
 
-    public void sendMessage(Message message) {
-        message.setTimestamp(LocalDateTime.now());
-
+    public void sendMessageToConversation(Message message, String conversationId) {
+        
+        // send to recipient
         messagingTemplate.convertAndSendToUser(
                 message.getRecipient(),
-                "/queue/messages",
+                "/queue/messages/" + conversationId,
+                message
+        );
+
+        // send to sender
+        messagingTemplate.convertAndSendToUser(
+                message.getSender(),
+                "/queue/messages/" + conversationId,
                 message
         );
     }
