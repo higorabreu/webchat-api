@@ -1,14 +1,12 @@
 package com.codemachine.webchat.controllers;
 
 import com.codemachine.webchat.service.ChatService;
-
-import java.security.Security;
-
+import com.codemachine.webchat.domain.Message;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.MessageMapping;
-import org.springframework.messaging.simp.annotation.SendToUser;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
-import com.codemachine.webchat.domain.Message;
 
 @Controller
 public class ChatController {
@@ -21,12 +19,10 @@ public class ChatController {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String sender = authentication.getName();
 
-        message.setSender(sender);
-
         String recipient = message.getRecipient();
         String conversationId = getConversationId(sender, recipient);
 
-        chatService.sendMessage(message, conversationId);
+        chatService.sendMessageToConversation(message, conversationId);
     }
 
     private String getConversationId(String sender, String recipient) {
