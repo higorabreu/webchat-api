@@ -20,12 +20,12 @@ public class ChatController {
         String sender = authentication.getName();
 
         String recipient = message.getRecipient();
-        String conversationId = getConversationId(sender, recipient);
+        String conversationId = generateConversationId(sender, recipient);
 
         chatService.sendMessageToConversation(message, conversationId);
     }
 
-    private String getConversationId(String sender, String recipient) {
+    private String generateConversationId(String sender, String recipient) {
         return sender.compareTo(recipient) < 0 ? sender + "-" + recipient : recipient + "-" + sender;
     }
 }

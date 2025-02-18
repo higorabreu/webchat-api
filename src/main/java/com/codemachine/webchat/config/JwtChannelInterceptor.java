@@ -23,20 +23,30 @@ public class JwtChannelInterceptor implements ChannelInterceptor {
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
         StompHeaderAccessor accessor = StompHeaderAccessor.wrap(message);
-        String token = accessor.getFirstNativeHeader("Authorization");
+        String authHeader = accessor.getFirstNativeHeader("Authorization");
 
-        if (token != null && token.startsWith("Bearer ")) {
-            token = token.substring(7);
-            String username = jwtUtil.extractUsername(token);
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
 
-            if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                var userDetails = userService.loadUserByUsername(username);
-                if (jwtUtil.validateToken(token, userDetails)) {
-                    var authToken = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-                    SecurityContextHolder.getContext().setAuthentication(authToken);
+            try {
+                String username = jwtUtil.extractUsername(token);
+
+                if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                    var userDetails = userService.loadUserByUsername(username);
+
+                    if (jwtUtil.validateToken(token, userDetails)) {
+                        var authToken = new UsernamePasswordAuthenticationToken(
+                            userDetails, null, userDetails.getAuthorities()
+                        );
+                        SecurityContextHolder.getContext().setAuthentication(authToken);
+                        accessor.setUser(authToken);
+                    }
                 }
+            } catch (Exception e) {
+                throw new RuntimeException("Erro ao validar o token JWT", e);
             }
         }
+
         return message;
     }
 }
