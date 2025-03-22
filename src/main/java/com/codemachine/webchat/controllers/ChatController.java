@@ -16,9 +16,7 @@ public class ChatController {
 
     @MessageMapping("/chat.send")
     public void sendMessage(Message message) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String sender = authentication.getName();
-
+        String sender = message.getSender();
         String recipient = message.getRecipient();
         String conversationId = generateConversationId(sender, recipient);
 
