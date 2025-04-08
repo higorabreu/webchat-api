@@ -1,6 +1,6 @@
 package com.codemachine.webchat.util;
 
-import com.codemachine.webchat.service.UserService;
+import com.codemachine.webchat.service.AuthService;
 import lombok.NonNull;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -22,7 +22,7 @@ public class JwtFilter extends OncePerRequestFilter {
 
     @Autowired
     @Lazy
-    private UserService userService;
+    private AuthService authService;
 
     @Autowired
     private JwtUtil jwtUtil;
@@ -48,7 +48,7 @@ public class JwtFilter extends OncePerRequestFilter {
 
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             try {
-                var userDetails = userService.loadUserByUsername(username);
+                var userDetails = authService.loadUserByUsername(username);
                 if (jwtUtil.validateToken(jwtToken, userDetails)) {
                     UsernamePasswordAuthenticationToken authenticationToken =
                             new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
@@ -65,5 +65,4 @@ public class JwtFilter extends OncePerRequestFilter {
 
         chain.doFilter(request, response);
     }
-
 }

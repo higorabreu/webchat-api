@@ -1,6 +1,6 @@
 package com.codemachine.webchat.config;
 
-import com.codemachine.webchat.service.UserService;
+import com.codemachine.webchat.service.AuthService;
 import com.codemachine.webchat.util.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.Message;
@@ -19,7 +19,7 @@ public class JwtChannelInterceptor implements ChannelInterceptor {
     private JwtUtil jwtUtil;
 
     @Autowired
-    private UserService userService;
+    private AuthService authService;
 
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
@@ -35,7 +35,7 @@ public class JwtChannelInterceptor implements ChannelInterceptor {
                 String username = jwtUtil.extractUsername(token);
 
                 if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                    var userDetails = userService.loadUserByUsername(username);
+                    var userDetails = authService.loadUserByUsername(username);
 
                     if (jwtUtil.validateToken(token, userDetails)) {
                         var authToken = new UsernamePasswordAuthenticationToken(
@@ -46,7 +46,7 @@ public class JwtChannelInterceptor implements ChannelInterceptor {
                     }
                 }
             } catch (Exception e) {
-                throw new RuntimeException("Erro ao validar o token JWT", e);
+                throw new RuntimeException("Error validating JWT token", e);
             }
         }
 
