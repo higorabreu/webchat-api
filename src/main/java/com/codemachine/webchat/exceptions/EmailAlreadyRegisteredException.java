@@ -1,4 +1,4 @@
-package com.codemachine.webchat.service.exceptions;
+package com.codemachine.webchat.exceptions;
 
 public class EmailAlreadyRegisteredException extends Exception{
 }

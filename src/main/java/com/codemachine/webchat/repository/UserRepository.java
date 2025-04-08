@@ -1,5 +1,6 @@
-package com.codemachine.webchat.domain;
+package com.codemachine.webchat.repository;
 
+import com.codemachine.webchat.domain.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

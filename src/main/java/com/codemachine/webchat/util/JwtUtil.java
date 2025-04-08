@@ -19,6 +19,9 @@ public class JwtUtil {
 
     @Value("${jwt.secret}")
     private String jwtSecret;
+    
+    @Value("${jwt.expiration}")
+    private Long jwtExpiration;
 
     private SecretKey getSigningKey() {
         return Keys.hmacShaKeyFor(jwtSecret.getBytes());
@@ -28,7 +31,7 @@ public class JwtUtil {
         return Jwts.builder()
                 .setSubject(String.valueOf(user.getUsername()))
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + 86400000))
+                .setExpiration(new Date(System.currentTimeMillis() + jwtExpiration))
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
     }

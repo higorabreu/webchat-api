@@ -2,13 +2,12 @@ package com.codemachine.webchat.service;
 
 import com.codemachine.webchat.dto.ResponseUser;
 import com.codemachine.webchat.domain.User;
-import com.codemachine.webchat.domain.UserRepository;
+import com.codemachine.webchat.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service

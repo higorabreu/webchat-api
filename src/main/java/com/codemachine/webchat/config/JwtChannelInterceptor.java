@@ -2,7 +2,6 @@ package com.codemachine.webchat.config;
 
 import com.codemachine.webchat.service.AuthService;
 import com.codemachine.webchat.util.JwtUtil;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
@@ -15,18 +14,21 @@ import org.springframework.stereotype.Component;
 @Component
 public class JwtChannelInterceptor implements ChannelInterceptor {
 
-    @Autowired
-    private JwtUtil jwtUtil;
+    private final JwtUtil jwtUtil;
 
-    @Autowired
-    private AuthService authService;
+    private final AuthService authService;
+
+    public JwtChannelInterceptor(JwtUtil jwtUtil, AuthService authService) {
+        this.jwtUtil = jwtUtil;
+        this.authService = authService;
+    }
 
     @Override
-    public Message<?> preSend(Message<?> message, MessageChannel channel) {
+    public Message<?> preSend(Message message, MessageChannel channel) {
         final StompHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(
                 message, StompHeaderAccessor.class);
 
-        String authHeader = accessor.getFirstNativeHeader("Authorization");
+        String authHeader = accessor != null ? accessor.getFirstNativeHeader("Authorization") : null;
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);

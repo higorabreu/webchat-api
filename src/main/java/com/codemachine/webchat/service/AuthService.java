@@ -1,11 +1,12 @@
 package com.codemachine.webchat.service;
 
 import com.codemachine.webchat.domain.User;
-import com.codemachine.webchat.domain.UserRepository;
+import com.codemachine.webchat.repository.UserRepository;
 import com.codemachine.webchat.dto.RequestLoginUser;
 import com.codemachine.webchat.dto.RequestRegisterUser;
-import com.codemachine.webchat.service.exceptions.*;
+import com.codemachine.webchat.exceptions.*;
 import com.codemachine.webchat.util.JwtUtil;
+import io.jsonwebtoken.JwtException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -111,8 +112,10 @@ public class AuthService implements UserDetailsService {
         try {
             var userDetails = loadUserByUsername(username);
             return jwtUtil.validateToken(token, userDetails);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to verify token");
+        } catch (UsernameNotFoundException e) {
+            throw new InvalidTokenException("User not found");
+        } catch (JwtException e) {
+            throw new InvalidTokenException("Invalid token");
         }
     }
 }

@@ -1,11 +1,11 @@
 package com.codemachine.webchat.controllers;
 
 import com.codemachine.webchat.dto.RequestLoginUser;
+import com.codemachine.webchat.dto.TokenValidationRequest;
+import com.codemachine.webchat.exceptions.*;
 import com.codemachine.webchat.service.AuthService;
 import com.codemachine.webchat.dto.RequestRegisterUser;
-import com.codemachine.webchat.service.exceptions.*;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,8 +17,11 @@ import java.util.Map;
 @RestController
 public class AuthController {
 
-    @Autowired
-    private AuthService authService;
+    private final AuthService authService;
+
+    public AuthController(AuthService authService) {
+        this.authService = authService;
+    }
 
     // POST /auth/register
     @PostMapping("/auth/register")
@@ -41,7 +44,6 @@ public class AuthController {
     public ResponseEntity<?> loginUser(@RequestBody @Valid RequestLoginUser data) {
         try {
             String token = authService.loginUser(data);
-            String ttl = "86400";
             Map<String, String> response = new HashMap<>();
             response.put("access_token", token);
             return ResponseEntity.ok().body(response);
@@ -58,27 +60,16 @@ public class AuthController {
     @PostMapping("/auth/check-token")
     public ResponseEntity<Boolean> isTokenValid(
             @RequestHeader("Authorization") String authorizationHeader,
-            @RequestBody Map<String, String> requestBody) {
+            @RequestBody @Valid TokenValidationRequest request) {
 
-        try {
-            String token = authorizationHeader.startsWith("Bearer ") ? authorizationHeader.substring(7) : null;
-
-            String username = requestBody.get("username");
-
-            if (token == null || token.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
-            }
-
-            if (username == null || username.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
-            }
-
-            boolean isValid = authService.checkTokenValidity(token, username);
-
-            return ResponseEntity.ok(isValid);
-
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(false);
+        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
+            throw new InvalidTokenException("Invalid token format");
         }
+
+        String token = authorizationHeader.substring(7);
+        boolean isValid = authService.checkTokenValidity(token, request.getUsername());
+
+        return ResponseEntity.ok(isValid);
     }
+
 }
