@@ -1,4 +1,4 @@
-package main.java.com.codemachine.webchat.service;
+package com.codemachine.webchat.service;
 
 import com.codemachine.webchat.domain.User;
 import com.codemachine.webchat.domain.UserRepository;
