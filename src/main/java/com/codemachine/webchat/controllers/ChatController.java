@@ -14,14 +14,8 @@ public class ChatController {
 
     @MessageMapping("/chat.send")
     public void sendMessage(Message message) {
-        String sender = message.getSender();
-        String recipient = message.getRecipient();
-        String conversationId = generateConversationId(sender, recipient);
-
-        chatService.sendMessageToConversation(message, conversationId);
+        chatService.sendMessageToConversation(message);
     }
 
-    private String generateConversationId(String sender, String recipient) {
-        return sender.compareTo(recipient) < 0 ? sender + "-" + recipient : recipient + "-" + sender;
-    }
+
 }
