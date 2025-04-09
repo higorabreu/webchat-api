@@ -20,6 +20,7 @@ public class ConversationDTO {
     private String name;
     private String lastMessage;
     private ZonedDateTime lastMessageTime;
+    private String lastMessageSenderUsername;
     private boolean unread;
     
     public static ConversationDTO fromConversation(Conversation conversation, User currentUser, Message lastMessage) {
@@ -36,6 +37,7 @@ public class ConversationDTO {
         if (lastMessage != null) {
             dto.setLastMessage(lastMessage.getContent());
             dto.setLastMessageTime(lastMessage.getTimestamp());
+            dto.setLastMessageSenderUsername(lastMessage.getSender().getUsername()); // Preenchendo o nome do remetente
 
             dto.setUnread(!lastMessage.isRead() && !lastMessage.getSender().getId().equals(currentUser.getId()));
         }

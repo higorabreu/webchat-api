@@ -8,6 +8,7 @@ import com.codemachine.webchat.dto.MessageDTO;
 import com.codemachine.webchat.repository.ConversationRepository;
 import com.codemachine.webchat.repository.MessageRepository;
 import com.codemachine.webchat.repository.UserRepository;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,14 +39,26 @@ public class ChatService {
 
     @Transactional
     public void sendMessageToConversation(Message webSocketMessage) {
+        if (webSocketMessage.getSenderUsername() == null || webSocketMessage.getRecipientUsername() == null) {
+            throw new IllegalArgumentException("Remetente e destinatário não podem ser nulos");
+        }
+        
         User sender = userRepository.findByUsername(webSocketMessage.getSenderUsername())
-                .orElseThrow(() -> new RuntimeException("Sender not found"));
+                .orElseThrow(() -> new RuntimeException("Remetente não encontrado: " + webSocketMessage.getSenderUsername()));
         
         User recipient = userRepository.findByUsername(webSocketMessage.getRecipientUsername())
-                .orElseThrow(() -> new RuntimeException("Recipient not found"));
+                .orElseThrow(() -> new RuntimeException("Destinatário não encontrado: " + webSocketMessage.getRecipientUsername()));
 
         Conversation conversation = getOrCreateConversation(sender.getId(), recipient.getId());
 
+        Message persistentMessage = createAndSaveMessage(webSocketMessage, sender, conversation);
+        
+        MessageDTO messageDTO = MessageDTO.fromMessage(persistentMessage);
+
+        sendMessageToWebSocketChannels(webSocketMessage, messageDTO, conversation);
+    }
+    
+    private Message createAndSaveMessage(Message webSocketMessage, User sender, Conversation conversation) {
         Message persistentMessage = new Message();
         persistentMessage.setConversation(conversation);
         persistentMessage.setSender(sender);
@@ -57,17 +70,18 @@ public class ChatService {
         }
         persistentMessage.setTimestamp(ZonedDateTime.now(zoneId));
         persistentMessage.setRead(false);
-        
-        messageRepository.save(persistentMessage);
-        
+
+        // informacoes transitorias
         persistentMessage.setSenderUsername(webSocketMessage.getSenderUsername());
         persistentMessage.setRecipientUsername(webSocketMessage.getRecipientUsername());
         persistentMessage.setTimezone(webSocketMessage.getTimezone());
-
-        MessageDTO messageDTO = MessageDTO.fromMessage(persistentMessage);
-
-        String conversationId = generateConversationId(webSocketMessage.getSenderUsername(), webSocketMessage.getRecipientUsername());
-
+        
+        return messageRepository.save(persistentMessage);
+    }
+    
+    private void sendMessageToWebSocketChannels(Message webSocketMessage, MessageDTO messageDTO, Conversation conversation) {
+        String conversationId = conversation.getId().toString();
+        
         // send to recipient
         messagingTemplate.convertAndSendToUser(
                 webSocketMessage.getRecipientUsername(),
@@ -88,17 +102,17 @@ public class ChatService {
         UUID smallerId = user1Id.compareTo(user2Id) < 0 ? user1Id : user2Id;
         UUID largerId = user1Id.equals(smallerId) ? user2Id : user1Id;
         
-        User user1 = userRepository.findById(smallerId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        
-        User user2 = userRepository.findById(largerId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        
         Optional<Conversation> existingConversation = conversationRepository.findByUsers(smallerId, largerId);
         
         if (existingConversation.isPresent()) {
             return existingConversation.get();
         } else {
+            User user1 = userRepository.findById(smallerId)
+                    .orElseThrow(() -> new RuntimeException("User not found: " + smallerId));
+            
+            User user2 = userRepository.findById(largerId)
+                    .orElseThrow(() -> new RuntimeException("User not found: " + largerId));
+            
             Conversation newConversation = new Conversation(user1, user2);
             return conversationRepository.save(newConversation);
         }
@@ -112,11 +126,19 @@ public class ChatService {
                     messageRepository.findByConversationOrderByTimestampAsc(conv).stream()
                     .map(message -> {
                         message.setSenderUsername(message.getSender().getUsername());
-                        return MessageDTO.fromMessage(message);
+                        
+                        MessageDTO messageDTO = MessageDTO.fromMessage(message);
+                        return messageDTO;
                     })
                     .collect(Collectors.toList())
                 )
                 .orElse(Collections.emptyList());
+    }
+
+    private Message getLastMessageFromConversation(Conversation conversation) {
+        List<Message> messages = messageRepository.findByConversationOrderByTimestampDesc(
+                conversation, PageRequest.of(0, 1));
+        return messages.isEmpty() ? null : messages.get(0);
     }
 
     @Transactional(readOnly = true)
@@ -127,10 +149,9 @@ public class ChatService {
         List<Conversation> conversations = conversationRepository.findByUserId(currentUser.getId());
         
         return conversations.stream().map(conversation -> {
-            List<Message> messages = messageRepository.findByConversationOrderByTimestampAsc(conversation);
-            Message lastMessage = messages.isEmpty() ? null : messages.get(messages.size() - 1);
-            
-            return ConversationDTO.fromConversation(conversation, currentUser, lastMessage);
+            Message lastMessage = getLastMessageFromConversation(conversation);
+            ConversationDTO dto = ConversationDTO.fromConversation(conversation, currentUser, lastMessage);
+            return dto;
         })
         .sorted(Comparator.comparing(ConversationDTO::getLastMessageTime, 
                 Comparator.nullsFirst(Comparator.reverseOrder())))
@@ -140,7 +161,7 @@ public class ChatService {
     @Transactional
     public int markMessagesAsRead(UUID conversationId, UUID currentUserId) {
         Conversation conversation = conversationRepository.findById(conversationId)
-                .orElseThrow(() -> new RuntimeException("Conversa não encontrada"));
+                .orElseThrow(() -> new RuntimeException("Chat not found"));
 
         List<Message> unreadMessages = messageRepository.findByConversationAndIsReadFalseAndSenderIdNot(
                 conversation, currentUserId);
@@ -152,11 +173,5 @@ public class ChatService {
         }
         
         return 0;
-    }
-
-    private String generateConversationId(String sender, String recipient) {
-        return sender.compareTo(recipient) < 0 ? 
-                sender + "-" + recipient : 
-                recipient + "-" + sender;
     }
 }

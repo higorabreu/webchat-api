@@ -31,7 +31,7 @@ public class MessageDTO {
         dto.setTimestamp(message.getTimestamp());
         dto.setRead(message.isRead());
         
-        // Campos transitórios
+        // campos transitorios
         dto.setSenderUsername(message.getSenderUsername());
         dto.setRecipientUsername(message.getRecipientUsername());
         dto.setTimezone(message.getTimezone());
