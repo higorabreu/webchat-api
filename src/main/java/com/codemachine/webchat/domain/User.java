@@ -38,4 +38,8 @@ public class User {
         this.username = data.username();
         this.password = data.password();
     }
+    
+    public User(String username) {
+        this.username = username;
+    }
 }
